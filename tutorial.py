@@ -7,7 +7,7 @@ import torch.utils.data as data
 import torch.nn as nn
 import pytorch_lightning as pl
 
-device = torch.device("cpu") # all of this works in GPU as well :)
+device = torch.device("cuda:0") # all of this works in GPU as well :)
 
 d = ToyDataset()
 X, yn = d.generate(n_samples=512, noise=1e-1, dataset_type='moons')
@@ -80,8 +80,8 @@ class CTRNN_DT(nn.Module):
         self.tau =  tau
 
         self.h2h = nn.Linear(hidden_size, hidden_size)
-        self.bias = torch.Tensor(hidden_size, 1)
-        self.taus = torch.Tensor(hidden_size, 1)
+        self.bias = torch.Tensor(hidden_size, 1).to(device)
+        self.taus = torch.Tensor(hidden_size, 1).to(device)
         self.non_linearity = torch.nn.Softplus()
 
     def init_hidden(self, input_shape):
@@ -110,7 +110,6 @@ class CTRNN_DT(nn.Module):
 f = CTRNN_DT(2)
 
 model = NeuralODE(f, sensitivity='adjoint', solver='dopri5').to(device)
-odel = NeuralODE(f, sensitivity='adjoint', solver='dopri5').to(device)
 
 def plot_traj(trajectory,t_span):
     color=['orange', 'blue']
@@ -132,7 +131,7 @@ plot_traj(trajectory, t_span)
 plt.show()
 
 learn = Learner(t_span, model)
-trainer = pl.Trainer(min_epochs=200, max_epochs=300)
+trainer = pl.Trainer(min_epochs=200, max_epochs=300,devices=1, accelerator="gpu")
 trainer.fit(learn)
 
 t_eval, trajectory = model(X_train, t_span)
