@@ -51,22 +51,21 @@ plt.xlabel("Time")
 plt.title('Damped Oscillator', fontsize = 20)
 plt.show()
 
-def vf_step(x0,xf,ti,gamma=0.1,omega=0.11,t=t):
-    print(ti)
+def vf_step(x0,xf,ti=10,gamma=0.1,omega=0.21):
     O = np.sqrt(omega**2-gamma**2)
-    t = np.linspace(0,500,10000)
-    term1 = x0 * np.cos(O*(t - ti))
-    term2 = gamma/omega * np.sin(O*(t-ti))
-    return xf + (x0-xf) * np.exp(-gamma * (t-ti)) * (term1+term2)
+    t = np.linspace(0,100,10000)
+    dt = (t-ti).clip(0,None)
+    term1 = np.cos(O*(dt))
+    term2 = gamma/O * np.sin(O*(dt))
+    rv = xf + (x0-xf) * np.exp(-gamma * (dt)) * (term1+term2)
+    return rv, t
 
 
-t = np.linspace(0,500,10000)
-x0 = 0
-xf = -5
-i = 100
-y = vf_step(x0,xf,t[i]) + vf(x0,0)
+x0 = -0.9
+xf = -2.3
+y,t = vf_step(x0,xf) + vf(x0,0)
 plt.plot(t,y)
 plt.ylabel("Position")
 plt.xlabel("Time")
-plt.title('Damped Oscillator', fontsize = 20)
+plt.title('Forced Oscillator', fontsize = 20)
 plt.show()

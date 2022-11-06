@@ -1,3 +1,4 @@
+from turtle import forward
 from torchdyn.core import NeuralODE
 from torchdyn.datasets import *
 from torchdyn import *
@@ -11,6 +12,7 @@ device = torch.device("cuda:0") # all of this works in GPU as well :)
 
 d = ToyDataset()
 X, yn = d.generate(n_samples=512, noise=1e-1, dataset_type='moons')
+print(X.shape)
 
 
 #Plotting data
@@ -23,6 +25,8 @@ plt.show()
 
 
 X_train = nn.Softplus()(torch.Tensor(X).to(device))
+print(X_train.shape)
+exit()
 y_train = torch.LongTensor(yn.long()).to(device)
 train = data.TensorDataset(X_train, y_train)
 trainloader = data.DataLoader(train, batch_size=len(X), shuffle=True)
@@ -55,6 +59,9 @@ f = nn.Sequential(
     )
 
 
+
+
+
 class CTRNN_DT(nn.Module):
     """Continuous-time RNN.
 
@@ -79,10 +86,10 @@ class CTRNN_DT(nn.Module):
         self.hidden_size = hidden_size
         self.tau =  tau
 
-        self.h2h = nn.Linear(hidden_size, hidden_size)
-        self.bias = torch.Tensor(hidden_size, 1).to(device)
+        self.h2h = nn.Linear(hidden_size, hidden_size, bias=False)
+        self.bias = torch.nn.Parameter(torch.Tensor(hidden_size, 1))
         self.taus = torch.Tensor(hidden_size, 1).to(device)
-        self.non_linearity = torch.nn.Softplus()
+        self.non_linearity = torch.nn.Sigmoid()
 
     def init_hidden(self, input_shape):
         batch_size = input_shape[1]
@@ -107,7 +114,7 @@ class CTRNN_DT(nn.Module):
     def out_size(self):
         return self.hidden_size
 
-f = CTRNN_DT(2)
+f = CTRNN_DT(5)
 
 model = NeuralODE(f, sensitivity='adjoint', solver='dopri5').to(device)
 
@@ -125,6 +132,7 @@ def plot_traj(trajectory,t_span):
     ax0.set_title("Dimension 0") ; ax1.set_title("Dimension 1")
 
 t_span = torch.linspace(0,5,300)
+print(X_train.shape)
 t_eval, trajectory = model(X_train, t_span)
 trajectory = trajectory.detach().cpu()
 plot_traj(trajectory, t_span)
